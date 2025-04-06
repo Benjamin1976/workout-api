@@ -1,0 +1,4 @@
+{
+  "mongoURI_local": "mongodb://localhost:27017/workout?readPreference=primary&directConnection=true&ssl=false",
+  "jwtSecret": "febbe41c-8bfb-4652-adc9-5d763d5da600"
+}
