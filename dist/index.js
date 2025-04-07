@@ -7,15 +7,17 @@ const app_1 = __importDefault(require("./app"));
 const mongoose_1 = require("./config/mongoose");
 const auth_router_1 = require("./routes/auth.router");
 const sessions_router_1 = require("./routes/sessions.router");
+console.log(process.env.NODE_ENV);
 const ENV = process.env.NODE_ENV;
 const PROD = ENV === "production";
-const PORT = PROD ? process.env.PORT || 5030 : 5030;
+const PORT = PROD ? process.env.PORT || 5030 : process.env.PORT || 5030;
+const URL = process.env.API_URL || "localhost";
 (0, mongoose_1.connectToDB)();
 app_1.default.listen(PORT, () => {
     /* eslint-disable no-console */
     app_1.default.use("/api/auth", auth_router_1.authRouter);
     app_1.default.use("/api/sessions", sessions_router_1.sessionsRouter);
     console.log("env:", ENV);
-    console.log("server started on port http://localhost:", PORT);
+    console.log("server started on port " + URL + ":" + PORT);
     /* eslint-enable no-console */
 });

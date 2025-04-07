@@ -15,23 +15,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sessionsRouter = void 0;
 // External Dependencies
 const express_1 = __importDefault(require("express"));
-const mongodb_1 = require("mongodb");
-const validation_1 = __importDefault(require("../middleware/validation"));
-const auth_1 = __importDefault(require("../middleware/auth"));
 const express_validator_1 = require("express-validator");
-const utils_1 = require("../utils");
-const Session_interface_1 = require("../interfaces/Session.interface");
+const mongodb_1 = require("mongodb");
 const Session_model_1 = __importDefault(require("../models/Session.model"));
 const Exercise_model_1 = __importDefault(require("../models/Exercise.model"));
+const validation_1 = __importDefault(require("../middleware/validation"));
+const auth_1 = __importDefault(require("../middleware/auth"));
+const Session_interface_1 = require("../interfaces/Session.interface");
+const utils_1 = require("../utils");
 // Global Config
 exports.sessionsRouter = express_1.default.Router();
 exports.sessionsRouter.use(express_1.default.json());
-const DBL = 1;
+const DBL = 0;
 const dp = "routes.session";
-// @route   GET api/sessions/
+// @route   GET api/sessions/sessions/get
 // @desc    Get all sessions
 // @access  Private
-exports.sessionsRouter.get("/", auth_1.default, validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.sessionsRouter.post("/sessions/get", auth_1.default, validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let { filters, sort, start } = req.params;
         let s = 0;
@@ -55,10 +55,10 @@ exports.sessionsRouter.get("/", auth_1.default, validation_1.default, (req, res)
         res.status(500).send(error.message);
     }
 }));
-// @route   GET api/sessions/session/:id
+// @route   GET api/sessions/session/get/:id
 // @desc    Get a single session
 // @access  Private
-exports.sessionsRouter.get("/session/:id", auth_1.default, [(0, express_validator_1.param)("id", "Please enter a sessionId").exists()], validation_1.default, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+exports.sessionsRouter.post("/session/get/:id", auth_1.default, [(0, express_validator_1.param)("id", "Please enter a sessionId").exists()], validation_1.default, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     let lm = dp + ".get: ";
     const { id } = req.params;
     try {
@@ -77,74 +77,74 @@ exports.sessionsRouter.get("/session/:id", auth_1.default, [(0, express_validato
         res.status(404).send(`Unable to find matching document with id: ${id}`);
     }
 }));
-// @route   GET api/sessions/exercises
-// @desc    Get all exercises
+// @route   POST api/sessions/sessions/many
+// @desc    Update many sessions
 // @access  Private
-exports.sessionsRouter.get("/exercises", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    try {
-        let lm = dp + ".exercises.get: ";
-        (0, utils_1.log)(1, DBL, lm + "Start");
-        const exercises = (yield Exercise_model_1.default.find({}).sort({
-            name: 1,
-        }));
-        (0, utils_1.log)(1, DBL, lm + ((_a = exercises === null || exercises === void 0 ? void 0 : exercises.length) !== null && _a !== void 0 ? _a : 0) + " exercises found");
-        res.json(exercises);
-        (0, utils_1.log)(1, DBL, lm + "Finish");
+exports.sessionsRouter.post("/sessions/many/put", auth_1.default, [(0, express_validator_1.body)("sessions", "Missing sessions from post").exists().isArray()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let lm = dp + ".updateManySessions: ";
+    (0, utils_1.log)(1, DBL, lm + "Start");
+    const sessionsToUpdate = req.body;
+    const sessionsToReturn = yield Promise.all(sessionsToUpdate.map((sessionUpd) => __awaiter(void 0, void 0, void 0, function* () {
+        let savedSession = yield updateIfChanged(sessionUpd);
+        return savedSession !== null && savedSession !== void 0 ? savedSession : sessionUpd;
+    })));
+    if (sessionsToReturn && Array.isArray(sessionsToReturn)) {
+        (0, utils_1.log)(1, DBL, lm + `Updated ${sessionsToReturn.length} sessions`);
+        (0, utils_1.log)(1, DBL, lm + "Finished, returning data.");
+        res.json(sessionsToReturn);
     }
-    catch (error) {
-        console.log(error);
-        res.status(500).send(error.message);
+    else {
+        (0, utils_1.log)(1, DBL, lm + "Finished, no data updated.");
+        res.status(403).send("Finished, no data updated.");
     }
 }));
-// @route   POST api/sessions/exercise/name
-// @desc    Create new exercise name
+// @route   PUT api/sessions/put/:id
+// @desc    Update a session
 // @access  Private
-exports.sessionsRouter.post("/exercise/name", auth_1.default, [
-    (0, express_validator_1.body)("name", "Missing name property").exists(),
-    // body("_id", "Missing _id property").exists(),
-], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        let lm = dp + ".exercise.name.post: ";
-        (0, utils_1.log)(1, DBL, lm + "Start");
-        const newExerciseName = Object.assign(Object.assign({}, Session_interface_1.ExerciseNameInitialValues), { name: req.body.name });
-        const exercise = yield Exercise_model_1.default.create(newExerciseName);
-        if (exercise) {
-            // const exercise: ExerciseNameType = result
-            exercise.save();
-            (0, utils_1.log)(1, DBL, lm + `Created new exercise with id ${exercise._id}`);
-            res.json(exercise);
-        }
-        else {
-            res.status(400).send("Record create failed.");
-        }
-        (0, utils_1.log)(1, DBL, lm + "Finish");
+exports.sessionsRouter.post("/session/put/:id", auth_1.default, [(0, express_validator_1.param)("id", "Please enter a id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let lm = dp + ".updateSesh: ";
+    (0, utils_1.log)(1, DBL, lm + "Start");
+    const { id } = req.params;
+    const query = { _id: new mongodb_1.ObjectId(id) };
+    const updSession = req.body;
+    // console.log(updSession);
+    const savedSession = yield updateIfChanged(updSession);
+    const sessionToReturn = savedSession !== null && savedSession !== void 0 ? savedSession : updSession;
+    if (sessionToReturn && !Array.isArray(sessionToReturn)) {
+        (0, utils_1.log)(1, DBL, lm + `Updated 1 sessions`);
+        (0, utils_1.log)(1, DBL, lm + "Finished, returning data.");
+        res.json(sessionToReturn);
     }
-    catch (error) {
-        console.log(error);
-        res.status(500).send(error.message);
+    else {
+        (0, utils_1.log)(1, DBL, lm + "Finished, no data updated.");
+        res.status(403).send("Finished, no data updated.");
     }
 }));
 // @route   POST api/sessions
 // @desc    Create a new session
 // @access  Private
-exports.sessionsRouter.post("/", auth_1.default, [(0, express_validator_1.body)("name", "Please enter a name").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const newSession = req.body;
-        const session = (yield Session_model_1.default.insertOne(newSession));
-        session
-            ? res.json(session)
-            : res.status(500).send("Failed to create a new session.");
-    }
-    catch (error) {
-        console.error(error);
-        res.status(400).send(error.message);
-    }
-}));
-// @route   POST api/sessions/clone
-// @desc    Create an existing session
+// sessionsRouter.post(
+//   "/session/add",
+//   auth,
+//   [body("name", "Please enter a name").exists()],
+//   validation,
+//   async (req: Request, res: Response) => {
+//     try {
+//       const newSession = req.body as SessionItemType;
+//       const session = (await Session.insertOne(newSession)) as SessionItemType;
+//       session
+//         ? res.json(session)
+//         : res.status(500).send("Failed to create a new session.");
+//     } catch (error: any) {
+//       console.error(error);
+//       res.status(400).send(error.message);
+//     }
+//   }
+// );
+// @route   POST api/sessions/session/clone
+// @desc    Clone an existing session
 // @access  Private
-exports.sessionsRouter.post("/clone", auth_1.default, [(0, express_validator_1.body)("sessionId", "Please enter a sessionId").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.sessionsRouter.post("/session/clone", auth_1.default, [(0, express_validator_1.body)("sessionId", "Please enter a sessionId").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const sessionId = req.body.sessionId;
         let sessionToClone = yield Session_model_1.default.findById(sessionId);
@@ -192,6 +192,54 @@ exports.sessionsRouter.post("/clone", auth_1.default, [(0, express_validator_1.b
     catch (error) {
         console.error(error);
         res.status(400).send(error.message);
+    }
+}));
+// @route   GET api/sessions/exercises/all/get
+// @desc    Get all exercises
+// @access  Private
+exports.sessionsRouter.post("/exercises/all/get", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        let lm = dp + ".exercises.get: ";
+        (0, utils_1.log)(1, DBL, lm + "Start");
+        const exercises = (yield Exercise_model_1.default.find({}).sort({
+            name: 1,
+        }));
+        (0, utils_1.log)(1, DBL, lm + ((_a = exercises === null || exercises === void 0 ? void 0 : exercises.length) !== null && _a !== void 0 ? _a : 0) + " exercises found");
+        res.json(exercises);
+        (0, utils_1.log)(1, DBL, lm + "Finish");
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(error.message);
+    }
+}));
+// @route   POST api/sessions/exercise/name/post
+// @desc    Create new exercise name
+// @access  Private
+exports.sessionsRouter.post("/exercise/name/post", auth_1.default, [
+    (0, express_validator_1.body)("name", "Missing name property").exists(),
+    // body("_id", "Missing _id property").exists(),
+], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        let lm = dp + ".exercise.name.post: ";
+        (0, utils_1.log)(1, DBL, lm + "Start");
+        const newExerciseName = Object.assign(Object.assign({}, Session_interface_1.ExerciseNameInitialValues), { name: req.body.name });
+        const exercise = yield Exercise_model_1.default.create(newExerciseName);
+        if (exercise) {
+            // const exercise: ExerciseNameType = result
+            exercise.save();
+            (0, utils_1.log)(1, DBL, lm + `Created new exercise with id ${exercise._id}`);
+            res.json(exercise);
+        }
+        else {
+            res.status(400).send("Record create failed.");
+        }
+        (0, utils_1.log)(1, DBL, lm + "Finish");
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).send(error.message);
     }
 }));
 const updateSession = (_id, updSession) => __awaiter(void 0, void 0, void 0, function* () {
@@ -242,53 +290,10 @@ const updateIfChanged = (updSession) => __awaiter(void 0, void 0, void 0, functi
     const updatedRecord = yield updateSession(_id, updSession);
     return updatedRecord ? updatedRecord : session;
 });
-// @route   POST api/sessions/many
-// @desc    Update many sessions
-// @access  Private
-exports.sessionsRouter.post("/many", auth_1.default, [(0, express_validator_1.param)("sessions", "Missing sessions from post").exists().isArray()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let lm = dp + ".updateManySessions: ";
-    (0, utils_1.log)(1, DBL, lm + "Start");
-    const sessionsToUpdate = req.body;
-    const sessionsToReturn = yield Promise.all(sessionsToUpdate.map((sessionUpd) => __awaiter(void 0, void 0, void 0, function* () {
-        let savedSession = yield updateIfChanged(sessionUpd);
-        return savedSession !== null && savedSession !== void 0 ? savedSession : sessionUpd;
-    })));
-    if (sessionsToReturn && Array.isArray(sessionsToReturn)) {
-        (0, utils_1.log)(1, DBL, lm + `Updated ${sessionsToReturn.length} sessions`);
-        (0, utils_1.log)(1, DBL, lm + "Finished, returning data.");
-        res.json(sessionsToReturn);
-    }
-    else {
-        (0, utils_1.log)(1, DBL, lm + "Finished, no data updated.");
-        res.status(403).send("Finished, no data updated.");
-    }
-}));
-// @route   PUT api/sessions/:id
-// @desc    Update a session
-// @access  Private
-exports.sessionsRouter.put("/:id", auth_1.default, [(0, express_validator_1.param)("id", "Please enter a id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let lm = dp + ".updateSesh: ";
-    (0, utils_1.log)(1, DBL, lm + "Start");
-    const { id } = req.params;
-    const query = { _id: new mongodb_1.ObjectId(id) };
-    const updSession = req.body;
-    // console.log(updSession);
-    const savedSession = yield updateIfChanged(updSession);
-    const sessionToReturn = savedSession !== null && savedSession !== void 0 ? savedSession : updSession;
-    if (sessionToReturn && !Array.isArray(sessionToReturn)) {
-        (0, utils_1.log)(1, DBL, lm + `Updated 1 sessions`);
-        (0, utils_1.log)(1, DBL, lm + "Finished, returning data.");
-        res.json(sessionToReturn);
-    }
-    else {
-        (0, utils_1.log)(1, DBL, lm + "Finished, no data updated.");
-        res.status(403).send("Finished, no data updated.");
-    }
-}));
 // @route   PUT api/sessions/exercise/:id/:exerciseId
 // @desc    Update one exercise
 // @access  Private
-exports.sessionsRouter.put("/exercise/:id/:exerciseId", auth_1.default, [(0, express_validator_1.param)("id", "Please include Session Id").exists()], [(0, express_validator_1.param)("exerciseId", "Please include Exercise Id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.sessionsRouter.post("/exercise/put/:id/:exerciseId", auth_1.default, [(0, express_validator_1.param)("id", "Please include Session Id").exists()], [(0, express_validator_1.param)("exerciseId", "Please include Exercise Id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let lm = dp + ".updateExercise: ";
     (0, utils_1.log)(1, DBL, lm + "Start");
     const sessionId = req.params.id;
@@ -321,7 +326,7 @@ exports.sessionsRouter.put("/exercise/:id/:exerciseId", auth_1.default, [(0, exp
 // @route   PUT api/sessions/set/:id/:exerciseId/:setId
 // @desc    Update one set
 // @access  Private
-exports.sessionsRouter.put("/set/:id/:exerciseId/:setId", auth_1.default, [(0, express_validator_1.param)("id", "Please include Session Id").exists()], [(0, express_validator_1.param)("exerciseId", "Please include Exercise Id").exists()], [(0, express_validator_1.param)("setId", "Please include Set Id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.sessionsRouter.post("/set/put/:id/:exerciseId/:setId", auth_1.default, [(0, express_validator_1.param)("id", "Please include Session Id").exists()], [(0, express_validator_1.param)("exerciseId", "Please include Exercise Id").exists()], [(0, express_validator_1.param)("setId", "Please include Set Id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let lm = dp + ".updateSet: ";
     (0, utils_1.log)(1, DBL, lm + "Start");
     const sessionId = req.params.id;
@@ -351,23 +356,26 @@ exports.sessionsRouter.put("/set/:id/:exerciseId/:setId", auth_1.default, [(0, e
 // @route   DELETE api/sessions/:id
 // @desc    Delete one session
 // @access  Private
-exports.sessionsRouter.delete("/:id", auth_1.default, [(0, express_validator_1.param)("id", "Please include a Session Id").exists()], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = req.params.id;
-    try {
-        const query = { _id: new mongodb_1.ObjectId(id) };
-        const result = yield Session_model_1.default.deleteOne(query);
-        if (result && result.deletedCount) {
-            res.status(202).send(`Successfully removed game with id ${id}`);
-        }
-        else if (!result) {
-            res.status(400).send(`Failed to remove game with id ${id}`);
-        }
-        else if (!result.deletedCount) {
-            res.status(404).send(`Game with id ${id} does not exist`);
-        }
-    }
-    catch (error) {
-        console.error(error.message);
-        res.status(400).send(error.message);
-    }
-}));
+// sessionsRouter.delete(
+//   "/:id",
+//   auth,
+//   [param("id", "Please include a Session Id").exists()],
+//   validation,
+//   async (req: Request, res: Response) => {
+//     const id = req.params.id;
+//     try {
+//       const query = { _id: new ObjectId(id) };
+//       const result = await Session.deleteOne(query);
+//       if (result && result.deletedCount) {
+//         res.status(202).send(`Successfully removed game with id ${id}`);
+//       } else if (!result) {
+//         res.status(400).send(`Failed to remove game with id ${id}`);
+//       } else if (!result.deletedCount) {
+//         res.status(404).send(`Game with id ${id} does not exist`);
+//       }
+//     } catch (error: any) {
+//       console.error(error.message);
+//       res.status(400).send(error.message);
+//     }
+//   }
+// );

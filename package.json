@@ -10,7 +10,7 @@
     "start": "node dist/index.js",
     "tsc": "tsc -w",
     "ts-node": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "dev": "concurrently  \"npm run server\""
+    "dev": "concurrently  \"npm run server\" \"npm run tsc\""
   },
   "author": "",
   "license": "ISC",

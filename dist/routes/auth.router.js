@@ -23,13 +23,13 @@ const express_validator_1 = require("express-validator");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcryptjs_1 = require("bcryptjs");
 const utils_1 = require("../utils");
-const DBL = 1;
+const DBL = 0;
 const dp = "routes.auth";
 exports.authRouter = express_1.default.Router();
 // @route   POST api/auth
 // @desc    Login user
 // @access  Private
-exports.authRouter.post("/", [
+exports.authRouter.post("/user/login", [
     (0, express_validator_1.check)("email", "Please enter a valid email").isEmail(),
     (0, express_validator_1.check)("password", "Password is required").exists(),
 ], validation_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -76,7 +76,8 @@ exports.authRouter.post("/", [
 // @route   GET api/auth
 // @desc    Get logged in user
 // @access  Private
-exports.authRouter.get("/", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// authRouter.get("/", auth, async (req: any, res: any) => {
+exports.authRouter.post("/user/load", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let lm = dp + ".getUser: ";
     (0, utils_1.log)(1, DBL, lm + "Started");
     try {
