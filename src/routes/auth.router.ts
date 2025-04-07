@@ -13,7 +13,7 @@ import jwt from "jsonwebtoken";
 import { compare } from "bcryptjs";
 import { getJwt, log } from "../utils";
 
-const DBL = 1;
+const DBL = 2;
 const dp = "routes.auth";
 
 export const authRouter = express.Router();
