@@ -79,7 +79,7 @@ authRouter.post(
 // @desc    Get logged in user
 // @access  Private
 // authRouter.get("/", auth, async (req: any, res: any) => {
-authRouter.get("/", async (req: any, res: any) => {
+authRouter.post("/user/load", auth, async (req: any, res: any) => {
   let lm = dp + ".getUser: ";
   log(1, DBL, lm + "Started");
 
