@@ -1,12 +1,14 @@
 // External Dependencies
 import express, { NextFunction, Request, Response } from "express";
+import { body, param } from "express-validator";
+
 import { ObjectId } from "mongodb";
+import Session from "../models/Session.model";
+import Exercise from "../models/Exercise.model";
 
 import validation from "../middleware/validation";
 import auth from "../middleware/auth";
 
-import { body, param } from "express-validator";
-import { log } from "../utils";
 import {
   ExerciseItemType,
   ExerciseNameInitialValues,
@@ -15,15 +17,13 @@ import {
   SessionListItemType,
   SetItemType,
 } from "../interfaces/Session.interface";
-
-import Session from "../models/Session.model";
-import Exercise from "../models/Exercise.model";
+import { log } from "../utils";
 
 // Global Config
 export const sessionsRouter = express.Router();
 sessionsRouter.use(express.json());
 
-const DBL = 1;
+const DBL = 0;
 const dp = "routes.session";
 
 // @route   GET api/sessions/sessions/get
