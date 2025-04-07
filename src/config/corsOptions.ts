@@ -4,6 +4,10 @@ const allowedOrigins: string[] = [
   "http://localhost:3050/",
   "http://localhost:5030/",
   "http://localhost:5050/",
+  "http://workout.imaginators.life/",
+  "http://workout.imaginators.life/*",
+  "http://*.workout.imaginators.life/",
+  "http://*.workout.imaginators.life/*",
 ];
 
 export const corsOptions: cors.CorsOptions = {
