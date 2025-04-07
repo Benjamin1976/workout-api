@@ -26,11 +26,11 @@ sessionsRouter.use(express.json());
 const DBL = 1;
 const dp = "routes.session";
 
-// @route   GET api/sessions/
+// @route   GET api/sessions/sessions/get
 // @desc    Get all sessions
 // @access  Private
-sessionsRouter.get(
-  "/",
+sessionsRouter.post(
+  "/sessions/get",
   auth,
   validation,
   async (req: Request, res: Response) => {
@@ -60,11 +60,11 @@ sessionsRouter.get(
   }
 );
 
-// @route   GET api/sessions/session/:id
+// @route   GET api/sessions/session/get/:id
 // @desc    Get a single session
 // @access  Private
-sessionsRouter.get(
-  "/session/:id",
+sessionsRouter.post(
+  "/session/get/:id",
   auth,
   [param("id", "Please enter a sessionId").exists()],
   validation,
@@ -89,60 +89,67 @@ sessionsRouter.get(
   }
 );
 
-// @route   GET api/sessions/exercises
-// @desc    Get all exercises
-// @access  Private
-sessionsRouter.get("/exercises", auth, async (req: Request, res: Response) => {
-  try {
-    let lm = dp + ".exercises.get: ";
-    log(1, DBL, lm + "Start");
-    const exercises = (await Exercise.find({}).sort({
-      name: 1,
-    })) as ExerciseNameType[];
-    log(1, DBL, lm + (exercises?.length ?? 0) + " exercises found");
-
-    res.json(exercises);
-    log(1, DBL, lm + "Finish");
-  } catch (error: any) {
-    console.log(error);
-    res.status(500).send(error.message);
-  }
-});
-
-// @route   POST api/sessions/exercise/name
-// @desc    Create new exercise name
+// @route   POST api/sessions/sessions/many
+// @desc    Update many sessions
 // @access  Private
 sessionsRouter.post(
-  "/exercise/name",
+  "/sessions/many/put",
   auth,
-  [
-    body("name", "Missing name property").exists(),
-    // body("_id", "Missing _id property").exists(),
-  ],
+  [body("sessions", "Missing sessions from post").exists().isArray()],
   validation,
   async (req: Request, res: Response) => {
-    try {
-      let lm = dp + ".exercise.name.post: ";
-      log(1, DBL, lm + "Start");
+    let lm = dp + ".updateManySessions: ";
+    log(1, DBL, lm + "Start");
 
-      const newExerciseName: Partial<ExerciseNameType> = {
-        ...ExerciseNameInitialValues,
-        name: req.body.name,
-      };
-      const exercise: ExerciseNameType = await Exercise.create(newExerciseName);
-      if (exercise) {
-        // const exercise: ExerciseNameType = result
-        exercise.save();
+    const sessionsToUpdate: SessionListItemType[] = req.body;
+    const sessionsToReturn: SessionListItemType[] = await Promise.all(
+      sessionsToUpdate.map(async (sessionUpd: SessionListItemType) => {
+        let savedSession = await updateIfChanged(sessionUpd);
+        return savedSession ?? sessionUpd;
+      })
+    );
 
-        log(1, DBL, lm + `Created new exercise with id ${exercise._id}`);
-        res.json(exercise);
-      } else {
-        res.status(400).send("Record create failed.");
-      }
-      log(1, DBL, lm + "Finish");
-    } catch (error: any) {
-      console.log(error);
-      res.status(500).send(error.message);
+    if (sessionsToReturn && Array.isArray(sessionsToReturn)) {
+      log(1, DBL, lm + `Updated ${sessionsToReturn.length} sessions`);
+      log(1, DBL, lm + "Finished, returning data.");
+      res.json(sessionsToReturn);
+    } else {
+      log(1, DBL, lm + "Finished, no data updated.");
+      res.status(403).send("Finished, no data updated.");
+    }
+  }
+);
+
+// @route   PUT api/sessions/put/:id
+// @desc    Update a session
+// @access  Private
+sessionsRouter.post(
+  "/session/put/:id",
+  auth,
+  [param("id", "Please enter a id").exists()],
+  validation,
+  async (req: Request, res: Response) => {
+    let lm = dp + ".updateSesh: ";
+    log(1, DBL, lm + "Start");
+
+    const { id } = req.params;
+    const query = { _id: new ObjectId(id) };
+    const updSession: SessionItemType = req.body as SessionItemType;
+    // console.log(updSession);
+
+    const savedSession: SessionItemType | SessionListItemType =
+      await updateIfChanged(updSession);
+
+    const sessionToReturn: SessionItemType | SessionListItemType =
+      savedSession ?? updSession;
+
+    if (sessionToReturn && !Array.isArray(sessionToReturn)) {
+      log(1, DBL, lm + `Updated 1 sessions`);
+      log(1, DBL, lm + "Finished, returning data.");
+      res.json(sessionToReturn);
+    } else {
+      log(1, DBL, lm + "Finished, no data updated.");
+      res.status(403).send("Finished, no data updated.");
     }
   }
 );
@@ -150,30 +157,30 @@ sessionsRouter.post(
 // @route   POST api/sessions
 // @desc    Create a new session
 // @access  Private
-sessionsRouter.post(
-  "/",
-  auth,
-  [body("name", "Please enter a name").exists()],
-  validation,
-  async (req: Request, res: Response) => {
-    try {
-      const newSession = req.body as SessionItemType;
-      const session = (await Session.insertOne(newSession)) as SessionItemType;
-      session
-        ? res.json(session)
-        : res.status(500).send("Failed to create a new session.");
-    } catch (error: any) {
-      console.error(error);
-      res.status(400).send(error.message);
-    }
-  }
-);
+// sessionsRouter.post(
+//   "/session/add",
+//   auth,
+//   [body("name", "Please enter a name").exists()],
+//   validation,
+//   async (req: Request, res: Response) => {
+//     try {
+//       const newSession = req.body as SessionItemType;
+//       const session = (await Session.insertOne(newSession)) as SessionItemType;
+//       session
+//         ? res.json(session)
+//         : res.status(500).send("Failed to create a new session.");
+//     } catch (error: any) {
+//       console.error(error);
+//       res.status(400).send(error.message);
+//     }
+//   }
+// );
 
-// @route   POST api/sessions/clone
-// @desc    Create an existing session
+// @route   POST api/sessions/session/clone
+// @desc    Clone an existing session
 // @access  Private
 sessionsRouter.post(
-  "/clone",
+  "/session/clone",
   auth,
   [body("sessionId", "Please enter a sessionId").exists()],
   validation,
@@ -254,6 +261,68 @@ sessionsRouter.post(
   }
 );
 
+// @route   GET api/sessions/exercises/all/get
+// @desc    Get all exercises
+// @access  Private
+sessionsRouter.post(
+  "/exercises/all/get",
+  auth,
+  async (req: Request, res: Response) => {
+    try {
+      let lm = dp + ".exercises.get: ";
+      log(1, DBL, lm + "Start");
+      const exercises = (await Exercise.find({}).sort({
+        name: 1,
+      })) as ExerciseNameType[];
+      log(1, DBL, lm + (exercises?.length ?? 0) + " exercises found");
+
+      res.json(exercises);
+      log(1, DBL, lm + "Finish");
+    } catch (error: any) {
+      console.log(error);
+      res.status(500).send(error.message);
+    }
+  }
+);
+
+// @route   POST api/sessions/exercise/name/post
+// @desc    Create new exercise name
+// @access  Private
+sessionsRouter.post(
+  "/exercise/name/post",
+  auth,
+  [
+    body("name", "Missing name property").exists(),
+    // body("_id", "Missing _id property").exists(),
+  ],
+  validation,
+  async (req: Request, res: Response) => {
+    try {
+      let lm = dp + ".exercise.name.post: ";
+      log(1, DBL, lm + "Start");
+
+      const newExerciseName: Partial<ExerciseNameType> = {
+        ...ExerciseNameInitialValues,
+        name: req.body.name,
+      };
+      const exercise: ExerciseNameType = await Exercise.create(newExerciseName);
+      if (exercise) {
+        // const exercise: ExerciseNameType = result
+        exercise.save();
+
+        log(1, DBL, lm + `Created new exercise with id ${exercise._id}`);
+        res.json(exercise);
+      } else {
+        res.status(400).send("Record create failed.");
+      }
+      log(1, DBL, lm + "Finish");
+    } catch (error: any) {
+      console.log(error);
+      res.status(500).send(error.message);
+    }
+  }
+);
+
 const updateSession = async (
   _id: string,
   updSession: SessionItemType | SessionListItemType
@@ -317,76 +386,11 @@ const updateIfChanged = async (
   return updatedRecord ? updatedRecord : session;
 };
 
-// @route   POST api/sessions/many
-// @desc    Update many sessions
-// @access  Private
-sessionsRouter.post(
-  "/many",
-  auth,
-  [param("sessions", "Missing sessions from post").exists().isArray()],
-  validation,
-  async (req: Request, res: Response) => {
-    let lm = dp + ".updateManySessions: ";
-    log(1, DBL, lm + "Start");
-
-    const sessionsToUpdate: SessionListItemType[] = req.body;
-    const sessionsToReturn: SessionListItemType[] = await Promise.all(
-      sessionsToUpdate.map(async (sessionUpd: SessionListItemType) => {
-        let savedSession = await updateIfChanged(sessionUpd);
-        return savedSession ?? sessionUpd;
-      })
-    );
-
-    if (sessionsToReturn && Array.isArray(sessionsToReturn)) {
-      log(1, DBL, lm + `Updated ${sessionsToReturn.length} sessions`);
-      log(1, DBL, lm + "Finished, returning data.");
-      res.json(sessionsToReturn);
-    } else {
-      log(1, DBL, lm + "Finished, no data updated.");
-      res.status(403).send("Finished, no data updated.");
-    }
-  }
-);
-
-// @route   PUT api/sessions/:id
-// @desc    Update a session
-// @access  Private
-sessionsRouter.put(
-  "/:id",
-  auth,
-  [param("id", "Please enter a id").exists()],
-  validation,
-  async (req: Request, res: Response) => {
-    let lm = dp + ".updateSesh: ";
-    log(1, DBL, lm + "Start");
-
-    const { id } = req.params;
-    const query = { _id: new ObjectId(id) };
-    const updSession: SessionItemType = req.body as SessionItemType;
-    // console.log(updSession);
-
-    const savedSession: SessionItemType | SessionListItemType =
-      await updateIfChanged(updSession);
-
-    const sessionToReturn: SessionItemType | SessionListItemType =
-      savedSession ?? updSession;
-
-    if (sessionToReturn && !Array.isArray(sessionToReturn)) {
-      log(1, DBL, lm + `Updated 1 sessions`);
-      log(1, DBL, lm + "Finished, returning data.");
-      res.json(sessionToReturn);
-    } else {
-      log(1, DBL, lm + "Finished, no data updated.");
-      res.status(403).send("Finished, no data updated.");
-    }
-  }
-);
-
 // @route   PUT api/sessions/exercise/:id/:exerciseId
 // @desc    Update one exercise
 // @access  Private
-sessionsRouter.put(
-  "/exercise/:id/:exerciseId",
+sessionsRouter.post(
+  "/exercise/put/:id/:exerciseId",
   auth,
   [param("id", "Please include Session Id").exists()],
   [param("exerciseId", "Please include Exercise Id").exists()],
@@ -431,8 +435,8 @@ sessionsRouter.put(
 // @route   PUT api/sessions/set/:id/:exerciseId/:setId
 // @desc    Update one set
 // @access  Private
-sessionsRouter.put(
-  "/set/:id/:exerciseId/:setId",
+sessionsRouter.post(
+  "/set/put/:id/:exerciseId/:setId",
   auth,
   [param("id", "Please include Session Id").exists()],
   [param("exerciseId", "Please include Exercise Id").exists()],
@@ -474,28 +478,28 @@ sessionsRouter.put(
 // @route   DELETE api/sessions/:id
 // @desc    Delete one session
 // @access  Private
-sessionsRouter.delete(
-  "/:id",
-  auth,
-  [param("id", "Please include a Session Id").exists()],
-  validation,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
+// sessionsRouter.delete(
+//   "/:id",
+//   auth,
+//   [param("id", "Please include a Session Id").exists()],
+//   validation,
+//   async (req: Request, res: Response) => {
+//     const id = req.params.id;
 
-    try {
-      const query = { _id: new ObjectId(id) };
-      const result = await Session.deleteOne(query);
+//     try {
+//       const query = { _id: new ObjectId(id) };
+//       const result = await Session.deleteOne(query);
 
-      if (result && result.deletedCount) {
-        res.status(202).send(`Successfully removed game with id ${id}`);
-      } else if (!result) {
-        res.status(400).send(`Failed to remove game with id ${id}`);
-      } else if (!result.deletedCount) {
-        res.status(404).send(`Game with id ${id} does not exist`);
-      }
-    } catch (error: any) {
-      console.error(error.message);
-      res.status(400).send(error.message);
-    }
-  }
-);
+//       if (result && result.deletedCount) {
+//         res.status(202).send(`Successfully removed game with id ${id}`);
+//       } else if (!result) {
+//         res.status(400).send(`Failed to remove game with id ${id}`);
+//       } else if (!result.deletedCount) {
+//         res.status(404).send(`Game with id ${id} does not exist`);
+//       }
+//     } catch (error: any) {
+//       console.error(error.message);
+//       res.status(400).send(error.message);
+//     }
+//   }
+// );
