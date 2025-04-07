@@ -7,7 +7,7 @@
     "clientbuild": "cd ..&& cd client&& npm install&& npm run build",
     "build": "tsc",
     "server": "dotenvx run -- nodemon dist/index.js",
-    "start": "dotenvx run -- node dist/index.js",
+    "start": "node dist/index.js",
     "tsc": "tsc -w",
     "ts-node": "ts-node-dev --respawn --transpile-only src/index.ts",
     "dev": "concurrently  \"npm run server\""
