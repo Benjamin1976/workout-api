@@ -1,7 +1,7 @@
 {
   "name": "workouts_backed",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "clientinstall": "cd ..&& cd client&& npm install",
     "clientbuild": "cd ..&& cd client&& npm install&& npm run build",

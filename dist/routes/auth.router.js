@@ -23,7 +23,7 @@ const express_validator_1 = require("express-validator");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcryptjs_1 = require("bcryptjs");
 const utils_1 = require("../utils");
-const DBL = 0;
+const DBL = 1;
 const dp = "routes.auth";
 exports.authRouter = express_1.default.Router();
 // @route   POST api/auth
@@ -75,9 +75,9 @@ exports.authRouter.post("/", [
 }));
 // @route   GET api/auth
 // @desc    Get logged in user
-// // @access  Private
-exports.authRouter.get("/:from", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let lm = dp + ".login: ";
+// @access  Private
+exports.authRouter.get("/", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let lm = dp + ".getUser: ";
     (0, utils_1.log)(1, DBL, lm + "Started");
     try {
         // Check token through "auth" and if successful,
@@ -88,9 +88,11 @@ exports.authRouter.get("/:from", auth_1.default, (req, res) => __awaiter(void 0,
             password: 0,
             status: 0,
         });
-        (0, utils_1.log)(1, DBL, lm + "Finish");
         // Return user
-        user ? res.json(user) : res.status(400).json({ msg: "User not loaded" });
+        user && (user === null || user === void 0 ? void 0 : user._id)
+            ? res.json(user)
+            : res.status(400).json({ msg: "User not loaded" });
+        (0, utils_1.log)(1, DBL, lm + "Finish");
     }
     catch (err) {
         console.error(err.message);

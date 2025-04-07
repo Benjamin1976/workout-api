@@ -18,8 +18,8 @@ const getJwt = () => {
     return jwtSecret !== null && jwtSecret !== void 0 ? jwtSecret : "thisSecret";
 };
 exports.getJwt = getJwt;
-const includeTime = true;
 const log = (lvl, dbl, msg, data) => {
+    const includeTime = true;
     let dbgLevel = dbl !== null && dbl !== void 0 ? dbl : 0;
     let dtStamp = luxon_1.DateTime.now().toFormat("yyyy-LL-dd hh:mm:ss.SSS");
     msg = includeTime ? dtStamp + ": " + msg : msg;

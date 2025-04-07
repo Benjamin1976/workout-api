@@ -11,14 +11,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectToDB = void 0;
 const mongoose_1 = require("mongoose");
-const MONGO_DB_URI = process.env.MONGO_DB_URI;
+const MONGODB_URI = process.env.MONGODB_URI;
 // connection to db
 const connectToDB = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         (0, mongoose_1.set)("strictQuery", false);
-        if (!MONGO_DB_URI)
+        if (!MONGODB_URI)
             throw new Error("Missing connection string");
-        const db = yield (0, mongoose_1.connect)(MONGO_DB_URI);
+        const db = yield (0, mongoose_1.connect)(MONGODB_URI);
         console.log("MongoDB connected to", db.connection.name);
         // Emit an event when the connection is successful
     }

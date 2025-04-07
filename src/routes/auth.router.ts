@@ -77,9 +77,9 @@ authRouter.post(
 
 // @route   GET api/auth
 // @desc    Get logged in user
-// // @access  Private
-authRouter.get("/:from", auth, async (req: any, res: any) => {
-  let lm = dp + ".login: ";
+// @access  Private
+authRouter.get("/", auth, async (req: any, res: any) => {
+  let lm = dp + ".getUser: ";
   log(1, DBL, lm + "Started");
 
   try {
@@ -92,10 +92,12 @@ authRouter.get("/:from", auth, async (req: any, res: any) => {
       status: 0,
     });
 
-    log(1, DBL, lm + "Finish");
-
     // Return user
-    user ? res.json(user) : res.status(400).json({ msg: "User not loaded" });
+    user && user?._id
+      ? res.json(user)
+      : res.status(400).json({ msg: "User not loaded" });
+
+    log(1, DBL, lm + "Finish");
   } catch (err: any) {
     console.error(err.message);
     res.status(500).send("Server Error");

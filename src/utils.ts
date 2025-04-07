@@ -23,8 +23,8 @@ export const getJwt = (): string => {
   return jwtSecret ?? "thisSecret";
 };
 
-const includeTime = true;
 export const log = (lvl: number, dbl: number, msg: string, data?: string) => {
+  const includeTime = true;
   let dbgLevel = dbl ?? 0;
   let dtStamp = DateTime.now().toFormat("yyyy-LL-dd hh:mm:ss.SSS");
   msg = includeTime ? dtStamp + ": " + msg : msg;

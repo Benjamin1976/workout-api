@@ -9,8 +9,10 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 exports.default = (req, res, next) => {
     // Get token from header
     const token = req.header("x-auth-token");
+    console.log("Starting authorisation check");
     // Check if not token
     if (!token) {
+        console.log("No token, authorisation denied");
         return res.status(401).json({ msg: "No token, authorisation denied" });
     }
     try {
@@ -20,11 +22,17 @@ exports.default = (req, res, next) => {
         // Add the decoded user to the req header
         req.user = {};
         if (typeof decoded !== "string") {
+            console.log("Authorised user");
             req.user = decoded.user;
         }
+        else {
+            console.log("Not authorised user");
+        }
+        console.log("Finished authorisation check");
         next();
     }
     catch (err) {
+        console.log("Token is not valie");
         res.status(401).json({ msg: "Token is not valid" });
     }
 };
