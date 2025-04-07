@@ -1,5 +1,4 @@
 import { getJwt } from "../utils";
-import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
 // const config = require("config");
