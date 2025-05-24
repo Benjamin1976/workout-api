@@ -1,5 +1,4 @@
 import { DateTime } from "luxon";
-import config from "config";
 
 // import { DebugMsgType } from "./types";
 
@@ -16,11 +15,12 @@ export type DebugMsgType = {
 export const getJwt = (): string => {
   const lm = dp + ".getJwt: ";
   log(1, DBL, lm + "Getting JWT");
-  const jwtSecret: string | undefined =
-    process.env.NODE_ENV === "production"
-      ? process.env.jwtSecret
-      : config.get("jwtSecret");
-  return jwtSecret ?? "thisSecret";
+  // const jwtSecret: string | undefined =
+  //   process.env.NODE_ENV === "production"
+  //     ? process.env.jwtSecret
+  //     : config.get("jwtSecret");
+  const jwtSecret: string | undefined = process.env.JWT_SECRET;
+  return jwtSecret ?? "Secret";
 };
 
 export const log = (lvl: number, dbl: number, msg: string, data?: string) => {
